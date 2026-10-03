@@ -1,0 +1,205 @@
+{
+  "event": {
+    "logo": "img/logo.jpg",
+    "logoShape": "rounded",
+    "title": "Top 5 Teams",
+    "subtitle": "Project Showcase 2026",
+    "finaleTitle": "Congratulations!",
+    "finaleSubtitle": "Thank you to every team who built something amazing.",
+    "agendaTitle": "Agenda",
+    "agendaSubtitle": "Project Showcase 2026",
+    "agenda": [
+      {
+        "title": "គោរពទង់ជាតិ",
+        "note": "Salute to the National Flag",
+        "youtube": "lvHiwLncOs0",
+        "armyTribute": true
+      },
+      {
+        "title": "កិច្ចចាប់ផ្តើម",
+        "note": "Opening Ceremony"
+      },
+      {
+        "title": "មតិលោកគ្រូ",
+        "note": "Teacher's Remarks"
+      },
+      {
+        "title": "ប្រគល់លិខិតថ្លែងអំណរគុណ",
+        "note": "Letters of Appreciation"
+      },
+      {
+        "title": "ប្រកាសជ័យលាភី និង ចែករង្វាន់",
+        "note": "Announcing the Winners & Awards",
+        "highlight": true,
+        "action": "top5"
+      },
+      {
+        "title": "ប្រគល់លិខិតបញ្ជាក់ការសិក្សា",
+        "note": "Certificates of Study"
+      },
+      {
+        "title": "ថតរូបជាអនុស្សាវរីយ៍",
+        "note": "Souvenir Photos"
+      }
+    ]
+  },
+  "teams": [
+    {
+      "rank": 1,
+      "teamName": "ETEC040",
+      "project": "E-Commerce Skincare",
+      "photo": "img/team1.png",
+      "memberStyle": "group",
+      "members": [
+        {
+          "name": "Mony Pisal",
+          "role": "Developer",
+          "face": {
+            "x": 29.5,
+            "y": 19.6
+          }
+        },
+        {
+          "name": "Leang Piseth",
+          "role": "Developer",
+          "face": {
+            "x": 67.2,
+            "y": 24.1
+          }
+        }
+      ],
+      "tech": [
+        "React",
+        "Node.js",
+        "AI"
+      ]
+    },
+    {
+      "rank": 2,
+      "teamName": "ETEC081",
+      "project": "Network Design Of School",
+      "memberStyle": "group",
+      "members": [
+        {
+          "name": "Kao Vitou",
+          "role": "Developer",
+          "face": {
+            "x": 24.5,
+            "y": 21.3
+          }
+        },
+        {
+          "name": "Sour Borin",
+          "role": "Developer",
+          "face": {
+            "x": 67.5,
+            "y": 20.0
+          }
+        }
+      ],
+      "tech": [
+        "Unity",
+        "ARCore",
+        "Firebase"
+      ],
+      "photo": "img/team2.png"
+    },
+    {
+      "rank": 3,
+      "teamName": "ETEC012",
+      "project": "E-Learning",
+      "memberStyle": "group",
+      "members": [
+        {
+          "name": "Ban Sokimnea",
+          "role": "Developer",
+          "face": {
+            "x": 32.8,
+            "y": 24.0
+          }
+        },
+        {
+          "name": "Lim Thirani",
+          "role": "Developer",
+          "face": {
+            "x": 60.3,
+            "y": 22.1
+          }
+        }
+      ],
+      "tech": [
+        "Python",
+        "FastAPI",
+        "LLM"
+      ],
+      "photo": "img/team3.png"
+    },
+    {
+      "rank": 4,
+      "teamName": "ETEC024",
+      "project": "CamLife - A Better Life For Every Cambodian",
+      "memberStyle": "group",
+      "members": [
+        {
+          "name": "Dy Vuthy",
+          "role": "Developer",
+          "face": {
+            "x": 28.8,
+            "y": 19.4
+          }
+        },
+        {
+          "name": "San Piseth",
+          "role": "Developer",
+          "face": {
+            "x": 65.9,
+            "y": 27.8
+          }
+        }
+      ],
+      "tech": [
+        "Arduino",
+        "IoT",
+        "Flutter"
+      ],
+      "photo": "img/team4.png"
+    },
+    {
+      "rank": 5,
+      "teamName": "ETEC063",
+      "project": "Event Booking",
+      "photo": "img/team5.png",
+      "memberStyle": "group",
+      "members": [
+        {
+          "name": "PHOUNG SOVANNARA",
+          "role": "Developer",
+          "face": {
+            "x": 20.3,
+            "y": 21.5
+          }
+        },
+        {
+          "name": "THA WINNER",
+          "role": "Developer",
+          "face": {
+            "x": 51.0,
+            "y": 22.0
+          }
+        },
+        {
+          "name": "SOK VIREAK",
+          "role": "Developer",
+          "face": {
+            "x": 79.5,
+            "y": 29.6
+          }
+        }
+      ],
+      "tech": [
+        "Backend",
+        "Spring Boot"
+      ]
+    }
+  ]
+}

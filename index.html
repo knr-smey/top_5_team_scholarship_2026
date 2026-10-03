@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Top 5 Teams</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Orbitron:wght@500;700;900&family=Preahvihear&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css?v=20261004m" />
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+  <!-- Opening loader: real loading progress, then opens through a beveled window -->
+  <div id="loader">
+    <div class="ld-inner">
+      <img class="ld-logo" id="loader-logo" alt="" hidden />
+      <div class="ld-count"><span id="ld-num">0</span><span class="ld-pct">%</span></div>
+      <div class="ld-status"><span class="ld-text">Loading content</span><span class="ld-wipe"></span></div>
+      <div class="ld-bar"><div class="ld-bar-fill"></div></div>
+    </div>
+  </div>
+
+  <canvas id="scene"></canvas>
+  <div id="stone-labels" class="overlay"></div>
+
+  <!-- Team info shown during a reveal -->
+  <div id="hud" class="overlay">
+    <div id="hud-top">
+      <div id="hud-rank"></div>
+      <h1 id="hud-team"></h1>
+      <p id="hud-project"></p>
+    </div>
+  </div>
+
+  <!-- Blurred dark backdrop behind the big rank number / suspense line -->
+  <div id="rank-backdrop" class="overlay"></div>
+
+  <!-- Big "#3" before each reveal -->
+  <div class="overlay center-layer">
+    <div id="big-rank"><span class="label">RANK</span><span class="num"></span></div>
+  </div>
+
+  <!-- Suspense line before #1 -->
+  <div class="overlay center-layer">
+    <div id="suspense">And the <b>#1</b> team is…</div>
+  </div>
+
+
+  <!-- Member spotlight: one member at a time, before the demo video -->
+  <div id="member-intro" class="overlay center-layer">
+    <div class="mi-card">
+      <div class="mi-photo"><span class="mi-initials"></span><div class="mi-crop"></div><img alt="" /></div>
+      <div class="mi-count"></div>
+      <div class="mi-name"></div>
+      <div class="mi-role"></div>
+    </div>
+  </div>
+
+  <!-- Team photo spotlight: whole group photo with outline, members highlighted one by one -->
+  <div id="group-intro" class="overlay center-layer">
+    <div class="gi-stage">
+      <div class="gi-spot"></div>
+      <div class="gi-skeleton"></div>
+      <img class="gi-photo" alt="" />
+      <div class="gi-tags"></div>
+    </div>
+  </div>
+
+  <!-- Agenda: shown after Start Show, before the top 5 -->
+  <div id="agenda" class="overlay">
+    <div class="ag-panel">
+      <img class="logo ag-logo" id="agenda-logo" alt="School logo" hidden />
+      <h2 id="agenda-title" class="logo-title"></h2>
+      <p class="ag-sub" id="agenda-subtitle"></p>
+      <ol class="ag-list"></ol>
+      <p class="ag-help"><kbd>↑</kbd><kbd>↓</kbd> select · <kbd>Enter</kbd> open · <kbd>1</kbd>–<kbd>9</kbd> jump</p>
+    </div>
+  </div>
+
+  <!-- Page for an agenda item (not the top 5) -->
+  <div id="section" class="overlay">
+    <div class="sec-inner">
+      <div class="sec-num"></div>
+      <h2 class="sec-title logo-title"></h2>
+      <p class="sec-note"></p>
+      <p class="sec-back"><kbd>Esc</kbd> back to the Agenda</p>
+    </div>
+    <!-- YouTube video of an agenda item ("youtube" in teams.json), plays after the title -->
+    <div class="sec-video"></div>
+    <!-- 10 s tribute to the army after the video ("armyTribute": true), drawn by main.js -->
+    <div class="tribute">
+      <div class="tr-text">
+        <div class="tr-km">សូមគោរព និងដឹងគុណ</div>
+        <div class="tr-km2">កងទ័ពការពារមាតុភូមិ</div>
+        <div class="tr-en">Honoring the soldiers who protect our nation</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Finale -->
+  <div id="finale" class="overlay">
+    <img class="logo" id="finale-logo" alt="School logo" hidden />
+    <h2 id="finale-title" class="logo-title"></h2>
+    <p id="finale-subtitle"></p>
+    <!-- All 5 teams on a podium (#1 in the middle), filled in by main.js -->
+    <div id="finale-teams"></div>
+  </div>
+
+  <!-- Intro -->
+  <div id="intro" class="overlay">
+    <img class="logo" id="intro-logo" alt="School logo" hidden />
+    <p class="eyebrow" id="intro-subtitle"></p>
+    <h1 id="intro-title" class="logo-title"></h1>
+    <button id="start-btn" type="button">Start Show</button>
+    <p class="intro-note">Use → / Space to go to the next team</p>
+  </div>
+
+  <img id="corner-logo" alt="School logo" hidden />
+  <!-- "Boom" when the energy orb bursts: flash + shockwave ring -->
+  <div id="boom" class="overlay"></div>
+  <div class="overlay center-layer" style="z-index: 13"><div id="shockwave"></div></div>
+  <div id="hint"></div>
+  <div id="progress"></div>
+
+  <div id="controls">
+    <button type="button" id="prev-btn" aria-label="Previous">‹</button>
+    <button type="button" id="next-btn" aria-label="Next">›</button>
+  </div>
+
+  <div id="help">
+    <div><kbd>→</kbd><kbd>Space</kbd> next</div>
+    <div><kbd>←</kbd> back</div>
+    <div><kbd>R</kbd> replay members</div>
+    <div><kbd>M</kbd> mute music</div>
+    <div><kbd>H</kbd> hide this</div>
+  </div>
+
+  <!-- Fallback: plain fullscreen video if the 3D screen is hard to see on a projector -->
+  <div id="fullvideo"><video id="fullvideo-el" playsinline></video></div>
+
+  <script type="module" src="js/main.js?v=20261004m"></script>
+</body>
+</html>
