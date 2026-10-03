@@ -1826,13 +1826,45 @@ function buildFinaleTeams() {
 let mode = 'loading'; // 'menu' | 'section' | 'top5'
 let selectedIndex = 0; // the agenda opens with the first item selected
 
+// Agenda sounds, made with Web Audio (no file needed): a soft tick when the selection moves,
+// a deeper two-note "confirm" when an item is opened
+const UI_SOUND_VOLUME = 0.18;
+let uiAudio = null;
+function uiTone(freq, start, dur, type = 'sine', vol = UI_SOUND_VOLUME, slideTo = null) {
+  uiAudio ??= new (window.AudioContext || window.webkitAudioContext)();
+  if (uiAudio.state === 'suspended') uiAudio.resume().catch(() => {});
+  const t = uiAudio.currentTime + start;
+  const osc = uiAudio.createOscillator();
+  const gain = uiAudio.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, t);
+  if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+  gain.gain.setValueAtTime(0.0001, t);
+  gain.gain.exponentialRampToValueAtTime(vol, t + 0.008);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  osc.connect(gain).connect(uiAudio.destination);
+  osc.start(t);
+  osc.stop(t + dur + 0.02);
+}
+function playSelectSound() {
+  try { uiTone(1400, 0, 0.07, 'triangle', UI_SOUND_VOLUME, 1900); } catch { /* no audio */ }
+}
+function playOpenSound() {
+  try {
+    uiTone(660, 0, 0.12, 'triangle');
+    uiTone(990, 0.08, 0.22, 'triangle');
+  } catch { /* no audio */ }
+}
+
 function setSelected(i) {
+  if (i !== selectedIndex && mode === 'menu') playSelectSound(); // only when it really moves
   selectedIndex = i;
   document.querySelectorAll('.ag-item').forEach((el, k) => el.classList.toggle('selected', k === i));
 }
 
 function selectAgenda(i) {
   if (busy || mode !== 'menu' || !agenda[i]) return;
+  playOpenSound();
   if (agenda[i].action === 'top5') enterTop5();
   else openSection(i);
 }
