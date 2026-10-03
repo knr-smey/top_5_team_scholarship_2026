@@ -113,12 +113,13 @@ $('.ag-list').replaceChildren(...agenda.map((item, i) => {
     body.appendChild(note);
   }
   li.append(body);
-  if (item.highlight) {
-    const badge = document.createElement('span');
-    badge.className = 'ag-badge';
-    badge.textContent = 'UP NEXT';
-    li.appendChild(badge);
-  }
+  // "UP NEXT" badge on the highlighted item (turned off)
+  // if (item.highlight) {
+  //   const badge = document.createElement('span');
+  //   badge.className = 'ag-badge';
+  //   badge.textContent = 'UP NEXT';
+  //   li.appendChild(badge);
+  // }
   return li;
 }));
 

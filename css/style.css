@@ -390,9 +390,9 @@ html, body {
 }
 .gi-stage {
   position: relative;
-  height: 72vh; /* bigger members (no pixel cap, so it grows on large screens too) */
+  /* big members; on narrow screens the width limit wins, keeping the photo's shape (so tags stay on the faces) */
+  height: min(72vh, calc(96vw / var(--ar, 1)));
   aspect-ratio: var(--ar, 1);
-  max-width: 96vw;
 }
 .gi-photo {
   position: absolute;
@@ -495,6 +495,22 @@ html, body {
   white-space: nowrap; /* long names shrink to fit (fitTagNames in main.js) */
 }
 .gi-tag .role { margin-top: 2px; color: var(--muted); font-size: clamp(11px, 1vw, 14px); }
+
+/* Phones: smaller name tags, long names may wrap onto two lines */
+@media (max-width: 640px) {
+  .gi-tag { padding: 4px 8px; border-radius: 10px; }
+  .gi-tag .name { font-size: 11px; white-space: normal; line-height: 1.15; }
+  .gi-tag .role { font-size: 9px; margin-top: 1px; }
+}
+/* Short screens (phone held sideways): compact header so the photo gets the room */
+@media (max-height: 500px) {
+  .gi-rank { padding: 2px 10px; font-size: 10px; }
+  .gi-team { margin-top: 2px; font-size: clamp(20px, 3vw, 30px); }
+  .gi-project { margin-top: 3px; padding: 3px 12px; font-size: 12px; }
+  .gi-tag { padding: 3px 8px; border-radius: 10px; }
+  .gi-tag .name { font-size: 11px; }
+  .gi-tag .role { font-size: 9px; margin-top: 0; }
+}
 
 /* ---------- Boom (energy orb burst) ---------- */
 #boom {
