@@ -351,7 +351,7 @@ html, body {
   visibility: hidden;
   opacity: 0;
   flex-direction: column;
-  gap: 1.5vh;
+  gap: 0.5vh;
   background: radial-gradient(ellipse at center, rgba(5, 3, 15, 0.55), rgba(5, 3, 15, 0.92));
 }
 /* Header above the photo: rank pill, team name, project */
@@ -390,9 +390,9 @@ html, body {
 }
 .gi-stage {
   position: relative;
-  height: min(60vh, 600px);
+  height: 72vh; /* bigger members (no pixel cap, so it grows on large screens too) */
   aspect-ratio: var(--ar, 1);
-  max-width: 92vw;
+  max-width: 96vw;
 }
 .gi-photo {
   position: absolute;
