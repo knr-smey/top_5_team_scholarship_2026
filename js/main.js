@@ -26,11 +26,15 @@ const BLOOM_NORMAL = 0.8; // overall glow of the scene
 const STONE_GLOW = 0.6; // stone brightness: 1 = original, lower = darker (try 0.4 – 1)
 const BLOOM_VIDEO = 0; // no glow over the video, so it stays sharp with true colours
 const MEMBER_HOLD = 1.6; // seconds each member stays on screen
+const FLY_SECONDS = 3.8; // camera flight from one stone to the next (was 2.2)
+const FLY_SECONDS_TOP = 4.8; // flight to #1 (was 3)
+const STONE_WAIT = 0.8; // pause after the camera arrives, before the stone starts to swell
+const STONE_SWELL = 1.0; // the stone grows for this long, then bursts (was 0.5)
 const VIDEO_FIRST = true; // true: video plays first, members after it. false: members first, then the video
 const VIDEO_MAX = 60; // longest a demo video plays (seconds); override with "videoMax" in teams.json
 const VIDEO_FADE = 2; // fade-out (picture + sound) at the end of that limit
 const MUSIC_VOLUME = 0.25;
-const MUSIC_END = 110; // music plays only until 1:50, then fades out (and stays off)
+const MUSIC_END = 110; // music plays until 1:50, fades out, then starts again from the top (loops)
 const MUSIC_FADE = 3; // length of that fade-out (seconds), ending exactly at MUSIC_END
 
 // ---------------------------------------------------------------------------
@@ -617,22 +621,32 @@ function startMusic() {
 
 function stopMusic() {
   musicOn = false;
+  musicEnding = false;
   gsap.killTweensOf(music);
   gsap.to(music, { volume: 0, duration: 1, onComplete: () => music.pause() });
 }
 
-// At 1:47 the music fades out over 3 s and stops for good (until the show is started again)
+// At 1:47 the music fades out over 3 s, then starts again from the beginning and fades back in
 let musicEnding = false;
 music.addEventListener('timeupdate', () => {
   if (musicEnding || !musicOn || music.paused || music.currentTime < MUSIC_END - MUSIC_FADE) return;
   musicEnding = true;
-  musicOn = false; // duckMusic() won't bring it back
   gsap.killTweensOf(music);
-  gsap.to(music, { volume: 0, duration: MUSIC_FADE, ease: 'power1.in', onComplete: () => music.pause() });
+  gsap.to(music, {
+    volume: 0,
+    duration: MUSIC_FADE,
+    ease: 'power1.in',
+    onComplete: () => {
+      musicEnding = false;
+      music.currentTime = 0;
+      if (musicOn && !music.paused) gsap.to(music, { volume: MUSIC_VOLUME, duration: 2 });
+    },
+  });
 });
 
 function duckMusic(down) {
   gsap.killTweensOf(music);
+  musicEnding = false; // a loop fade cut short starts again on the next tick
   if (down) {
     gsap.to(music, { volume: 0, duration: 0.8, onComplete: () => music.pause() });
   } else if (started && musicOn) {
@@ -739,10 +753,10 @@ function teamView(team, zoom = false) {
   return { pos: target.clone().add(new THREE.Vector3(0, 0, d)), target };
 }
 
-function flyTo(pos, target, duration = 2.2, warp = 0) {
+function flyTo(pos, target, duration = 2.2, warp = 0, ease = 'power3.inOut') {
   const tl = gsap.timeline();
-  tl.to(rig.pos, { x: pos.x, y: pos.y, z: pos.z, duration, ease: 'power3.inOut' }, 0);
-  tl.to(rig.target, { x: target.x, y: target.y, z: target.z, duration, ease: 'power3.inOut' }, 0);
+  tl.to(rig.pos, { x: pos.x, y: pos.y, z: pos.z, duration, ease }, 0);
+  tl.to(rig.target, { x: target.x, y: target.y, z: target.z, duration, ease }, 0);
   if (warp) {
     tl.to(camera, {
       fov: 50 + warp,
@@ -1210,7 +1224,7 @@ function explodeTl(team) {
   };
 
   return gsap.timeline()
-    .to(planet.scale, { x: 1.35, y: 1.35, z: 1.35, duration: 0.5, ease: 'power2.in' })
+    .to(planet.scale, { x: 1.35, y: 1.35, z: 1.35, duration: STONE_SWELL, ease: 'power2.in' })
     .call(() => {
       planet.visible = false;
       team.revealed = true;
@@ -1689,10 +1703,12 @@ function revealTeam(i) {
   if (isTop && !team.revealed) tl.add(suspenseTl());
   tl.add(bigRankTl(team));
   const view = teamView(team);
-  tl.add(flyTo(view.pos, view.target, isTop ? 3 : 2.2, isTop ? 30 : 16), '-=0.7');
+  // slow, smooth flight from stone to stone (less zoom-warp so it doesn't feel rushed)
+  tl.add(flyTo(view.pos, view.target, isTop ? FLY_SECONDS_TOP : FLY_SECONDS, isTop ? 18 : 8, 'sine.inOut'), '-=0.7');
 
   const exploding = !team.revealed;
-  if (exploding) tl.add(explodeTl(team), '-=0.4').addLabel('stoneBoom', '<0.5'); // 0.5 s in: the stone bursts
+  // the camera arrives, the stone waits a moment, then swells and bursts
+  if (exploding) tl.add(explodeTl(team), `+=${STONE_WAIT}`).addLabel('stoneBoom', `<${STONE_SWELL}`);
   else tl.to(bloom, { strength: BLOOM_NORMAL, duration: 0.5 }, '<');
 
   if (isTop) tl.call(() => celebrate(true));
@@ -2189,7 +2205,7 @@ addEventListener('keydown', (e) => {
       music.muted = !music.muted;
       break;
     case 'z': case 'Z': toggleZoom(); break;
-    case 'h': case 'H': $('#help').classList.toggle('hidden'); break;
+    // case 'h': case 'H': $('#help').classList.toggle('hidden'); break; // help panel is commented out in index.html
   }
 });
 
