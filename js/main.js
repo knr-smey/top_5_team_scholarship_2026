@@ -34,8 +34,8 @@ const VIDEO_FIRST = true; // true: video plays first, members after it. false: m
 const VIDEO_MAX = 60; // longest a demo video plays (seconds); override with "videoMax" in teams.json
 const VIDEO_FADE = 2; // fade-out (picture + sound) at the end of that limit
 const MUSIC_VOLUME = 0.25;
-const MUSIC_END = 110; // music plays until 1:50, fades out, then starts again from the top (loops)
-const MUSIC_FADE = 3; // length of that fade-out (seconds), ending exactly at MUSIC_END
+const MUSIC_END = 126; // music plays until 2:06, fades out quickly, then starts again from the top (loops)
+const MUSIC_FADE = 1.2; // length of that fade-out (seconds), ending exactly at MUSIC_END
 
 // ---------------------------------------------------------------------------
 // Loading progress (shown on the opening loader)
@@ -639,7 +639,7 @@ music.addEventListener('timeupdate', () => {
     onComplete: () => {
       musicEnding = false;
       music.currentTime = 0;
-      if (musicOn && !music.paused) gsap.to(music, { volume: MUSIC_VOLUME, duration: 2 });
+      if (musicOn && !music.paused) gsap.to(music, { volume: MUSIC_VOLUME, duration: 0.8 }); // quick fade back in
     },
   });
 });
