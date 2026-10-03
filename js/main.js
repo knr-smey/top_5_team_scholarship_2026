@@ -1865,7 +1865,7 @@ function openSection(i) {
     onComplete: () => {
       busy = false;
       // the title pops first, then the video plays
-      if (item.youtube) sectionVideoCall = gsap.delayedCall(1.2, () => playSectionVideo(item));
+      if (item.video || item.youtube) sectionVideoCall = gsap.delayedCall(SECTION_VIDEO_DELAY, () => playSectionVideo(item));
     },
   })
     .add(hideAgendaTl())
@@ -1890,6 +1890,8 @@ function closeSection() {
 // YouTube video on an agenda page ("youtube": "<video id>" on the agenda item)
 // Needs internet. When the video ends, the title comes back.
 // ---------------------------------------------------------------------------
+const SECTION_VIDEO_DELAY = 2; // seconds the agenda title stays before its video starts
+const SECTION_VIDEO_FADE = 2; // video (picture and sound) fade-in
 let ytApi = null;
 let ytPlayer = null;
 let sectionVideoCall = null;
@@ -1909,28 +1911,55 @@ function loadYouTubeApi() {
 }
 
 async function playSectionVideo(item) {
-  const id = item.youtube;
   const token = ++sectionVideoToken;
+  const box = $('#section .sec-video');
+  // the title fades away first, then the video fades in slowly
+  const show = () => {
+    gsap.to('#section .sec-inner', { autoAlpha: 0, duration: 0.8, ease: 'power2.inOut' });
+    gsap.fromTo(box, { autoAlpha: 0, scale: 0.96 },
+      { autoAlpha: 1, scale: 1, duration: SECTION_VIDEO_FADE, delay: 0.5, ease: 'power2.out' });
+  };
+  const ended = () => {
+    gsap.to(box, { autoAlpha: 0, duration: 0.8, onComplete: () => stopSectionVideo(true) });
+    if (item.armyTribute) playTribute(() => gsap.to('#section .sec-inner', { autoAlpha: 1, duration: 0.8 }));
+    else gsap.to('#section .sec-inner', { autoAlpha: 1, duration: 0.8, delay: 0.3 });
+  };
+
+  // Local video file ("video": "file.mp4"): works offline, no YouTube title or ads
+  if (item.video) {
+    const frame = document.createElement('div');
+    frame.className = 'sec-video-frame local';
+    const v = document.createElement('video');
+    v.src = item.video;
+    v.playsInline = true;
+    v.addEventListener('ended', ended, { once: true });
+    frame.append(v);
+    box.replaceChildren(frame);
+    show();
+    // starts playing once the fade-in is under way, sound fades in with the picture
+    v.volume = 0;
+    sectionVideoCall = gsap.delayedCall(0.9, () => {
+      v.play().catch(() => { v.muted = true; v.play().catch(() => {}); });
+      gsap.to(v, { volume: 1, duration: SECTION_VIDEO_FADE });
+    });
+    return;
+  }
+
+  // YouTube ("youtube": "<video id>"), needs internet
   const YT = await loadYouTubeApi();
   if (token !== sectionVideoToken || mode !== 'section') return; // left the page meanwhile
-  const box = $('#section .sec-video');
+  // the player is taller than this frame: YouTube's title bar (top) and logo (bottom) are cropped off
+  const frame = document.createElement('div');
+  frame.className = 'sec-video-frame';
   const holder = document.createElement('div');
-  box.replaceChildren(holder);
+  frame.append(holder);
+  box.replaceChildren(frame);
   ytPlayer = new YT.Player(holder, {
-    videoId: id,
+    videoId: item.youtube,
     playerVars: { autoplay: 1, controls: 0, rel: 0, modestbranding: 1, playsinline: 1, iv_load_policy: 3, disablekb: 1 },
     events: {
-      onReady: (e) => {
-        e.target.playVideo();
-        gsap.to('#section .sec-inner', { autoAlpha: 0, duration: 0.5 });
-        gsap.fromTo(box, { autoAlpha: 0, scale: 0.92 }, { autoAlpha: 1, scale: 1, duration: 0.8, ease: 'expo.out' });
-      },
-      onStateChange: (e) => {
-        if (e.data !== YT.PlayerState.ENDED) return;
-        gsap.to(box, { autoAlpha: 0, duration: 0.8, onComplete: () => stopSectionVideo(true) });
-        if (item.armyTribute) playTribute(() => gsap.to('#section .sec-inner', { autoAlpha: 1, duration: 0.8 }));
-        else gsap.to('#section .sec-inner', { autoAlpha: 1, duration: 0.8, delay: 0.3 });
-      },
+      onReady: (e) => { e.target.playVideo(); show(); },
+      onStateChange: (e) => { if (e.data === YT.PlayerState.ENDED) ended(); },
     },
   });
 }
@@ -1943,125 +1972,130 @@ function stopSectionVideo(keepTribute = false) {
   ytPlayer?.destroy();
   ytPlayer = null;
   const box = $('#section .sec-video');
+  const v = box.querySelector('video');
+  if (v) { gsap.killTweensOf(v); v.pause(); }
   gsap.killTweensOf(box);
   gsap.set(box, { autoAlpha: 0 });
   box.replaceChildren();
 }
 
 // ---------------------------------------------------------------------------
-// Army tribute (10 s, after the agenda video): sunset, the flag is raised on a hill
-// while soldiers stand up and salute, with a message of respect
+// Army tribute (10 s, after the agenda video): white soldier silhouettes on a white hill
+// against black. All drawn here (SVG).
 // ---------------------------------------------------------------------------
-const TRIBUTE_SECONDS = 10;
+const TRIBUTE_SECONDS = 15;
 let tributeTl = null;
 
-// One soldier silhouette (front view, ~60 x 140): helmet, rifle, one arm down, one arm that salutes
-const SOLDIER = `
-  <path d="M17 23 Q30 5 43 23 L46 27 L14 27 Z"/>
-  <ellipse cx="30" cy="31" rx="8.5" ry="10"/>
-  <rect x="26" y="38" width="8" height="6"/>
-  <path d="M15 43 Q30 37 45 43 L47 86 L13 86 Z"/>
-  <path d="M15 45 L8 48 L6 86 L12 87 L16 54 Z"/>
-  <path d="M9 14 L12 14 L11 112 L8 112 Z"/>
-  <path d="M14 86 L46 86 L44 139 L34 139 L30 98 L26 139 L16 139 Z"/>
-  <path class="arm-down" d="M45 45 L52 48 L54 86 L48 87 L44 54 Z"/>
-  <path class="arm-up" d="M44 44 L57 33 L41 22 L37 27 L49 34 L41 41 Z" opacity="0"/>`;
+// Soldier parts, drawn facing right, feet at y = 0, about 300 units tall
+const ARMY = (() => {
+  const helmetFront = '<path d="M-28 -258 Q-28 -296 0 -296 Q28 -296 28 -258 Z"/><rect x="-32" y="-263" width="64" height="8" rx="4"/>';
+  const helmetSide = '<path d="M-24 -258 Q-22 -292 6 -292 Q30 -290 32 -262 Z"/><rect x="-27" y="-264" width="64" height="7" rx="3"/>';
+  const sideBody = `${helmetSide}
+    <ellipse cx="6" cy="-244" rx="16" ry="20"/>
+    <rect x="-8" y="-230" width="20" height="18"/>
+    <path d="M-30 -214 Q-2 -226 24 -214 L30 -150 L26 -112 L-28 -112 L-34 -160 Z"/>
+    <rect x="-60" y="-218" width="34" height="90" rx="13"/>
+    <rect x="-66" y="-136" width="40" height="16" rx="7"/>`;
+  const rifleAim = `
+    <path d="M-6 -214 L24 -211 L150 -208 L150 -200 L72 -198 L54 -189 L22 -193 L-8 -197 Z"/>
+    <rect x="148" y="-207" width="48" height="4" rx="2"/>
+    <rect x="186" y="-213" width="4" height="8"/>
+    <path d="M80 -199 L90 -199 L97 -176 L88 -173 Z"/>`;
+  const armsAim = `
+    <path d="M12 -208 L66 -199 L102 -203 L102 -190 L62 -184 L8 -192 Z"/>
+    <path d="M-2 -202 L40 -182 L64 -188 L66 -177 L38 -170 L-8 -188 Z"/>`;
+  return {
+    // standing at attention, front view, rifle upright at the side
+    stand: `${helmetFront}
+      <ellipse cx="0" cy="-243" rx="18" ry="21"/>
+      <rect x="-9" y="-228" width="18" height="16"/>
+      <path d="M-50 -206 Q-48 -220 -28 -222 L28 -222 Q48 -220 50 -206 L46 -118 L-46 -118 Z"/>
+      <path d="M-50 -210 L-62 -150 L-58 -96 L-45 -96 L-46 -150 L-38 -196 Z"/>
+      <path d="M50 -210 L62 -150 L58 -96 L45 -96 L46 -150 L38 -196 Z"/>
+      <ellipse cx="-52" cy="-92" rx="8" ry="9"/><ellipse cx="52" cy="-92" rx="8" ry="9"/>
+      <rect x="-45" y="-124" width="90" height="13" rx="3"/>
+      <path d="M-45 -114 L45 -114 L41 -14 L8 -14 L5 -70 L0 -96 L-5 -70 L-8 -14 L-41 -14 Z"/>
+      <path d="M-43 -17 L-6 -17 L-4 0 L-47 0 Z"/><path d="M6 -17 L43 -17 L47 0 L4 0 Z"/>
+      <path d="M-72 -96 L-62 -96 L-60 -306 L-65 -324 L-70 -306 Z"/>
+      <path d="M-61 -236 L-48 -228 L-52 -200 L-61 -208 Z"/>
+      <rect x="-75" y="-140" width="13" height="44" rx="3"/>`,
+    // standing, aiming the rifle
+    aim: `${sideBody}${rifleAim}${armsAim}
+      <path d="M-28 -114 L26 -114 L32 -62 L48 -6 L28 -4 L12 -56 L2 -82 Z"/>
+      <path d="M-28 -114 L4 -114 L-6 -60 L-26 -4 L-48 -4 L-32 -62 Z"/>
+      <path d="M24 -12 L58 -12 L60 0 L24 0 Z"/><path d="M-52 -12 L-22 -12 L-22 0 L-54 0 Z"/>`,
+    // kneeling, aiming the rifle
+    kneel: `<g transform="translate(0 80)">${sideBody}${rifleAim}${armsAim}</g>
+      <path d="M-28 -40 L20 -44 L62 -42 L68 -30 L66 0 L44 0 L44 -22 L-12 -18 Z"/>
+      <path d="M-30 -40 L0 -34 L-22 -6 L-74 -2 L-76 -14 L-36 -18 Z"/>
+      <path d="M44 -10 L76 -10 L78 0 L44 0 Z"/>`,
+    // walking forward with a backpack, rifle held low
+    walk: `${sideBody}
+      <path d="M-24 -184 L86 -128 L82 -119 L-28 -175 Z"/>
+      <path d="M40 -152 L48 -150 L52 -132 L44 -131 Z"/>
+      <path d="M12 -208 L34 -160 L56 -148 L52 -138 L26 -148 L2 -196 Z"/>
+      <path d="M-14 -206 L-4 -160 L14 -150 L10 -140 L-12 -150 L-26 -196 Z"/>
+      <path d="M-22 -114 L22 -114 L42 -60 L64 -6 L44 -4 L24 -54 L0 -84 Z"/>
+      <path d="M-28 -114 L6 -114 L-14 -56 L-40 -4 L-62 -4 L-36 -60 Z"/>
+      <path d="M40 -12 L74 -12 L76 0 L40 0 Z"/><path d="M-66 -12 L-36 -12 L-36 0 L-68 0 Z"/>`,
+  };
+})();
 
 function buildTribute() {
-  const root = $('#section .tribute');
-  if (root.querySelector('svg')) return root;
-  const hillY = (x) => 640 + ((x - 800) / 800) ** 2 * 130;
-  // soldiers on both sides of the flag, bigger near the middle
-  const soldiers = [];
-  for (const side of [-1, 1]) {
-    for (let k = 1; k <= 5; k++) {
-      const x = 800 + side * (70 + k * 135);
-      const sc = 1.75 - k * 0.17;
-      soldiers.push({ x, y: hillY(x), sc, k });
-    }
-  }
-  const rays = Array.from({ length: 18 }, (_, i) => {
-    const a = (i / 18) * Math.PI * 2;
-    const b = a + 0.07;
-    const R = 1400;
-    return `<path d="M800 600 L${800 + Math.cos(a) * R} ${600 + Math.sin(a) * R} L${800 + Math.cos(b) * R} ${600 + Math.sin(b) * R} Z"/>`;
-  }).join('');
-  // Cambodian flag (blue, red, blue) with a simple white Angkor Wat
-  const flag = `
-    <rect width="190" height="122" fill="#032ea1"/>
-    <rect y="30" width="190" height="62" fill="#e00025"/>
-    <g fill="#fff">
-      <rect x="55" y="76" width="80" height="6"/>
-      <rect x="60" y="70" width="70" height="6"/>
-      <rect x="66" y="58" width="58" height="12"/>
-      <path d="M95 36 L101 48 L101 58 L89 58 L89 48 Z"/>
-      <path d="M74 44 L79 52 L79 58 L69 58 L69 52 Z"/>
-      <path d="M116 44 L121 52 L121 58 L111 58 L111 52 Z"/>
-    </g>`;
-  root.insertAdjacentHTML('afterbegin', `
-    <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+  const stage = $('#section .tr-stage');
+  let svg = stage.querySelector('svg');
+  if (svg) return svg;
+  const hillY = (x) => 798 + ((x - 800) / 800) ** 2 * 50;
+  // x, size, pose, facing (-1 = left), order of appearance (0 = first)
+  const crew = [
+    [800, 1.55, 'stand', 1, 0],
+    [590, 1.12, 'walk', -1, 1], [1050, 0.85, 'stand', 1, 1],
+    [390, 0.82, 'stand', 1, 2], [1270, 1.12, 'aim', 1, 2],
+    [190, 1.0, 'aim', -1, 3], [1450, 1.0, 'kneel', 1, 3],
+  ];
+  const soldiers = crew.map(([x, s, pose, dir, k]) => `
+    <g transform="translate(${x} ${hillY(x) + 4}) scale(${s})">
+      <g class="tr-soldier" data-k="${k}"><g transform="scale(${dir} 1)">${ARMY[pose]}</g></g>
+    </g>`).join('');
+  stage.insertAdjacentHTML('afterbegin', `
+    <svg class="tr-scene" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
       <defs>
-        <linearGradient id="tr-sky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#07061e"/>
-          <stop offset="0.45" stop-color="#2a1640"/>
-          <stop offset="0.68" stop-color="#a8432f"/>
-          <stop offset="0.8" stop-color="#f29a3c"/>
-        </linearGradient>
-        <radialGradient id="tr-sun" cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0" stop-color="#fff3c4"/>
-          <stop offset="0.25" stop-color="#ffc85a" stop-opacity="0.9"/>
-          <stop offset="1" stop-color="#ff8a3c" stop-opacity="0"/>
+        <radialGradient id="tr-halo" cx="0.5" cy="0.6" r="0.5">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.12"/>
+          <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
         </radialGradient>
-        <filter id="tr-wave">
-          <feTurbulence type="fractalNoise" baseFrequency="0.012 0.03" numOctaves="1" seed="3">
-            <animate attributeName="baseFrequency" dur="3s" values="0.012 0.03;0.016 0.035;0.012 0.03" repeatCount="indefinite"/>
-          </feTurbulence>
-          <feDisplacementMap in="SourceGraphic" scale="12"/>
-        </filter>
       </defs>
-      <rect width="1600" height="900" fill="url(#tr-sky)"/>
-      <g class="tr-rays" fill="#ffd27a" opacity="0.12">${rays}</g>
-      <circle class="tr-sunglow" cx="800" cy="610" r="420" fill="url(#tr-sun)"/>
-      <g class="tr-hill">
-        <path d="M0 900 L0 770 Q400 690 800 640 Q1200 690 1600 770 L1600 900 Z" fill="#050308"/>
-        <rect x="796" y="340" width="8" height="305" rx="3" fill="#0b0810"/>
-        <circle cx="800" cy="336" r="9" fill="#ffc20e"/>
-        <g class="tr-flag" transform="translate(804 520)"><g filter="url(#tr-wave)">${flag}</g></g>
-        ${soldiers.map((p) => `<g transform="translate(${p.x - 30 * p.sc} ${p.y - 137 * p.sc}) scale(${p.sc})">
-            <g class="tr-soldier" data-k="${p.k}" fill="#050308">${SOLDIER}</g></g>`).join('')}
-      </g>
+      <rect width="1600" height="900" fill="#000"/>
+      <ellipse cx="800" cy="520" rx="760" ry="420" fill="url(#tr-halo)"/>
+      <g fill="#fff">${soldiers}</g>
+      <path class="tr-hill" fill="#fff" d="M0 900 L0 852 Q150 792 320 812 Q470 768 640 792 Q800 772 960 796 Q1140 774 1300 802 Q1460 792 1600 848 L1600 900 Z"/>
     </svg>`);
-  return root;
+  return stage.querySelector('svg');
 }
 
 function playTribute(onDone) {
   stopTribute();
-  const root = buildTribute();
-  const flag = root.querySelector('.tr-flag');
-  const soldiers = [...root.querySelectorAll('.tr-soldier')];
+  const root = $('#section .tribute');
+  const svg = buildTribute();
+  const soldiers = [...svg.querySelectorAll('.tr-soldier')];
+  const sweep = root.querySelector('.tr-sweep');
   const textParts = root.querySelectorAll('.tr-text > div');
   gsap.set(root, { autoAlpha: 0 });
-  gsap.set(flag, { attr: { transform: 'translate(804 520)' } });
-  gsap.set(root.querySelectorAll('.arm-up'), { opacity: 0 });
-  gsap.set(root.querySelectorAll('.arm-down'), { opacity: 1 });
   gsap.set(textParts, { autoAlpha: 0, y: 20 });
+  gsap.set(sweep, { xPercent: -100 });
 
   tributeTl = gsap.timeline({ onComplete: () => { tributeTl = null; onDone?.(); } })
-    .to(root, { autoAlpha: 1, duration: 0.8 })
-    .fromTo(root.querySelector('.tr-hill'), { y: 220 }, { y: 0, duration: 1.4, ease: 'power3.out' }, 0.2)
-    .fromTo(root.querySelector('.tr-sunglow'), { opacity: 0, scale: 0.6, transformOrigin: '50% 50%' },
-      { opacity: 1, scale: 1, duration: 2.5, ease: 'power2.out' }, 0.2)
-    .fromTo(root.querySelector('.tr-rays'), { rotation: 0, svgOrigin: '800 600' },
-      { rotation: 25, svgOrigin: '800 600', duration: TRIBUTE_SECONDS, ease: 'none' }, 0)
-    // soldiers stand up from the middle outwards
-    .fromTo(soldiers, { opacity: 0, y: 60 },
-      { opacity: 1, y: 0, duration: 0.8, ease: 'back.out(1.4)', stagger: (i, el) => (el.dataset.k - 1) * 0.15 }, 0.9)
-    // the flag goes up the pole
-    .to(flag, { attr: { transform: 'translate(804 344)' }, duration: 3, ease: 'power1.inOut' }, 1.6)
-    // everybody salutes
-    .to(root.querySelectorAll('.arm-down'), { opacity: 0, duration: 0.25 }, 4.4)
-    .to(root.querySelectorAll('.arm-up'), { opacity: 1, duration: 0.25 }, 4.4)
-    .to(textParts, { autoAlpha: 1, y: 0, duration: 0.9, stagger: 0.35, ease: 'power2.out' }, 4.6)
+    .to(root, { autoAlpha: 1, duration: 0.6 })
+    // slow push-in on the whole scene
+    .fromTo(svg, { scale: 1.06, transformOrigin: '50% 80%' }, { scale: 1, duration: TRIBUTE_SECONDS, ease: 'power1.out' }, 0)
+    .fromTo(svg.querySelector('.tr-hill'), { y: 140 }, { y: 0, duration: 1.3, ease: 'power3.out' }, 0.2)
+    // soldiers rise up: the big one first, then outwards
+    .fromTo(soldiers, { opacity: 0, y: 70 },
+      { opacity: 1, y: 0, duration: 0.9, ease: 'back.out(1.3)', stagger: (i, el) => el.dataset.k * 0.35 }, 0.7)
+    // a light sweeps across the soldiers
+    .to(sweep, { xPercent: 100, duration: 2.4, ease: 'power2.inOut' }, 3.8)
+    // the message of respect (if the .tr-text block is in index.html)
+    .to(textParts, { autoAlpha: 1, y: 0, duration: 0.9, stagger: 0.35, ease: 'power2.out' }, 4)
     .to(root, { autoAlpha: 0, duration: 1 }, TRIBUTE_SECONDS - 1);
 }
 
