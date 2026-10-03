@@ -34,7 +34,7 @@ const VIDEO_FIRST = true; // true: video plays first, members after it. false: m
 const VIDEO_MAX = 60; // longest a demo video plays (seconds); override with "videoMax" in teams.json
 const VIDEO_FADE = 2; // fade-out (picture + sound) at the end of that limit
 const MUSIC_VOLUME = 0.25;
-const MUSIC_END = 126; // music plays until 2:06, fades out quickly, then starts again from the top (loops)
+const MUSIC_END = 125; // music plays until 2:05, fades out quickly, then starts again from the top (loops)
 const MUSIC_FADE = 1.2; // length of that fade-out (seconds), ending exactly at MUSIC_END
 
 // ---------------------------------------------------------------------------
@@ -657,7 +657,7 @@ function duckMusic(down) {
 
 // Sound when a stone shatters (audio/impactglass.mp3). The file is long, so only
 // the first ~3 s are used, then it fades out. #1 plays a bit louder and deeper.
-const STONE_SOUND_VOLUME = 0.8;
+const STONE_SOUND_VOLUME = 0.6; // stone explosion loudness (was 0.8); #1 plays 25% louder
 const STONE_SOUND_LENGTH = 3; // seconds before it fades out
 const stoneSound = new Audio('audio/impactglass.mp3');
 
@@ -991,8 +991,13 @@ function groupIntroTl(team) {
     fitTagNames();
   };
 
+  const head = [...wrap.querySelectorAll('.gi-head > div')];
   const setup = () => {
     wrap.style.setProperty('--c', team.style.color);
+    wrap.querySelector('.gi-rank').textContent = `RANK #${team.rank}`;
+    wrap.querySelector('.gi-team').textContent = team.teamName;
+    wrap.querySelector('.gi-project').textContent = team.project;
+    gsap.set(head, { autoAlpha: 0, y: -16 });
     const g = team.group;
     if (g) {
       // Skeleton in the exact shape of the people in the photo
@@ -1027,6 +1032,8 @@ function groupIntroTl(team) {
   const tl = gsap.timeline();
   tl.call(setup);
   tl.to(wrap, { autoAlpha: 1, duration: 0.4 });
+  // rank, team name and project drop in above the photo
+  tl.to(head, { autoAlpha: 1, y: 0, duration: 0.6, stagger: 0.12, ease: 'back.out(1.6)' }, '<0.1');
   if (hasPhoto) {
     // Skeleton shows for a moment; if the photo still isn't ready, wait for it
     tl.call(() => {
