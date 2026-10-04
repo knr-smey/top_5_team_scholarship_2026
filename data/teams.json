@@ -5,43 +5,7 @@
     "title": "Top 5 Teams",
     "subtitle": "Project Showcase 2026",
     "finaleTitle": "Congratulations!",
-    "finaleSubtitle": "Thank you to every team who built something amazing.",
-    "agendaTitle": "Agenda",
-    "agendaSubtitle": "Project Showcase 2026",
-    "agenda": [
-      {
-        "title": "គោរពទង់ជាតិ",
-        "note": "Salute to the National Flag",
-        "video": "videoagenda1.mp4",
-        "armyTribute": true
-      },
-      {
-        "title": "កិច្ចចាប់ផ្តើម",
-        "note": "Opening Ceremony"
-      },
-      {
-        "title": "មតិលោកគ្រូ",
-        "note": "Teacher's Remarks"
-      },
-      {
-        "title": "ប្រគល់លិខិតថ្លែងអំណរគុណ",
-        "note": "Letters of Appreciation"
-      },
-      {
-        "title": "ប្រកាសជ័យលាភី និង ចែករង្វាន់",
-        "note": "Announcing the Winners & Awards",
-        "highlight": true,
-        "action": "top5"
-      },
-      {
-        "title": "ប្រគល់លិខិតបញ្ជាក់ការសិក្សា",
-        "note": "Certificates of Study"
-      },
-      {
-        "title": "ថតរូបជាអនុស្សាវរីយ៍",
-        "note": "Souvenir Photos"
-      }
-    ]
+    "finaleSubtitle": "Thank you to every team who built something amazing."
   },
   "teams": [
     {
